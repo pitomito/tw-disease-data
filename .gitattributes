@@ -1,0 +1,6 @@
+# Normalize line endings to LF in the repo (prevents CRLF churn on Windows)
+* text=auto eol=lf
+
+# Treat data/binary artifacts as binary
+*.parquet binary
+*.duckdb  binary

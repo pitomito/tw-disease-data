@@ -1,0 +1,24 @@
+# Data layers (raw timestamped history is local-only; can be re-fetched)
+/data/raw/
+/data/staging/
+/data/mart/
+# data/snapshot/ IS tracked — it's the committed source of truth CI builds from
+# (the CDC host firewalls cloud IPs, so GitHub Actions can't fetch it directly).
+
+# DuckDB warehouse (build artifact)
+*.duckdb
+*.duckdb.wal
+
+# Generated charts (rebuilt by scripts/export_static.py; deployed from CI)
+/exports/
+
+# Profiling / QA outputs (regenerable dev artifacts)
+/scripts/*.json
+
+# Note: certs/ IS tracked — the bundled TWCA intermediate is needed for CI TLS.
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

@@ -1,0 +1,36 @@
+name: CI
+
+# 每次 push / PR 觸及程式碼或資料快照時,從「已提交的快照」重建倉儲並跑 QA。
+# CI 不碰外部網路(疾管署主機封鎖雲端 IP,且 CI 本就不該依賴外部服務),
+# 故測的是轉換/建模邏輯的正確性,穩定可重現。
+on:
+  push:
+    paths:
+      - "src/**"
+      - "sql/**"
+      - "scripts/**"
+      - "data/snapshot/**"
+      - "requirements.txt"
+      - ".github/workflows/**"
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build warehouse + QA (from committed snapshot)
+        run: python src/build_warehouse.py     # QA 未過即 exit≠0
+
+      - name: Smoke-test chart exports
+        run: python scripts/export_static.py

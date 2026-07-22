@@ -1,0 +1,72 @@
+name: Build & deploy dashboard
+
+# 從「已提交的資料快照」重建倉儲 → 匯出靜態圖表 → 部署 GitHub Pages。
+# 觸發時機:
+#   * push 到 data/snapshot(本機擷取後 commit 新資料)—— 資料一更新就自動重新部署
+#   * 每週一排程 —— 確保 Pages 保持最新(即使該週資料沒變也重跑一次)
+#   * 手動
+# 註:實際的資料「擷取」在有台灣網路的本機執行(見 scripts/refresh_local.ps1),
+#     因為疾管署主機封鎖 GitHub Actions 的雲端 IP。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/snapshot/**"
+      - "src/**"
+      - "sql/**"
+      - "app.py"
+      - "scripts/export_static.py"
+  schedule:
+    - cron: "0 0 * * 1"   # 每週一 00:00 UTC(= 台北 08:00)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build warehouse + QA (from committed snapshot)
+        run: python src/build_warehouse.py       # QA 未過即 exit≠0
+
+      - name: Export static charts
+        run: python scripts/export_static.py
+
+      - name: Upload warehouse as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: warehouse-duckdb
+          path: warehouse.duckdb
+          retention-days: 14
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: exports
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,10 @@
+pandas>=2.2
+pyarrow>=15
+requests>=2.31
+certifi>=2024.0   # CA roots; combined with certs/ intermediate for CDC TLS
+duckdb>=1.0
+# --- visualization ---
+streamlit>=1.40
+plotly>=6.0
+folium>=0.19
+streamlit-folium>=0.24
