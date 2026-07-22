@@ -94,13 +94,17 @@ def dengue_points(con, year: int | None = None) -> pd.DataFrame:
 
 
 def dengue_years(con) -> list[int]:
-    """Years with geocoded cases (coordinates only exist from 2021 onward)."""
+    """Years with geocoded cases (coordinates only exist from 2021 onward).
+
+    Ascending order — this feeds a select_slider, which reads left-to-right
+    in list order, so oldest-to-newest is the natural reading direction.
+    """
     rows = con.sql(
         """
         SELECT DISTINCT dt.year
         FROM fact_dengue_cases f JOIN dim_date dt ON dt.date_key = f.onset_date_key
         WHERE f.centroid_x IS NOT NULL
-        ORDER BY dt.year DESC
+        ORDER BY dt.year ASC
         """
     ).fetchall()
     return [int(r[0]) for r in rows]

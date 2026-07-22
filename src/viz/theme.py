@@ -27,19 +27,25 @@ BLUE_RAMP = ["#cde2fb", "#9ec5f4", "#5598e7", "#2a78d6", "#1c5cab", "#104281", "
 
 
 def base_layout(title: str, height: int = 420) -> dict:
-    """Shared Plotly layout: recessive grid/axes, system sans, light surface."""
+    """Shared Plotly layout: recessive grid/axes, system sans, light surface.
+
+    Title and legend each get their own row in an enlarged top margin (title
+    near the very top, legend a clear ~30px band below it) so they never
+    overlap regardless of figure height.
+    """
     return dict(
-        title=dict(text=title, font=dict(size=17, color=INK)),
+        title=dict(text=title, font=dict(size=17, color=INK),
+                   x=0, xanchor="left", y=0.97, yanchor="top"),
         height=height,
         paper_bgcolor=SURFACE,
         plot_bgcolor=SURFACE,
         font=dict(family='system-ui, "Segoe UI", sans-serif', color=INK_2, size=13),
-        margin=dict(l=60, r=90, t=52, b=44),
+        margin=dict(l=60, r=90, t=92, b=44),
         xaxis=dict(gridcolor=GRID, linecolor=BASELINE, zeroline=False,
                    showgrid=True, ticks="outside", tickcolor=BASELINE),
         yaxis=dict(gridcolor=GRID, linecolor=BASELINE, zeroline=False,
                    rangemode="tozero"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
+        legend=dict(orientation="h", yanchor="top", y=0.84, xanchor="left", x=0,
                     font=dict(size=12)),
         hovermode="x unified",
     )

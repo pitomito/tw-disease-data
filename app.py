@@ -58,9 +58,9 @@ with tab_trend:
         st.info("此組合無資料。")
     else:
         st.plotly_chart(charts.weekly_trend_fig(df, d_code, d_label, county),
-                        width="stretch")
+                        width="stretch", theme=None)
         st.plotly_chart(charts.wow_growth_fig(df, d_label, county),
-                        width="stretch")
+                        width="stretch", theme=None)
 
     st.divider()
     st.subheader("COVID-19(月資料)")
@@ -69,7 +69,7 @@ with tab_trend:
     cov = data.covid_trend(con, cov_county)
     if not cov.empty:
         st.plotly_chart(charts.covid_trend_fig(cov, cov_county),
-                        width="stretch")
+                        width="stretch", theme=None)
 
 # ============================== 排名 ==========================================
 with tab_rank:
@@ -85,7 +85,7 @@ with tab_rank:
     highlight = st.session_state.get("tr_cty")
     st.plotly_chart(
         charts.county_rank_fig(rank_df, d_label, wk.strftime("%Y-%m-%d"), highlight),
-        width="stretch")
+        width="stretch", theme=None)
     with st.expander("完整排名表"):
         st.dataframe(rank_df, width="stretch", hide_index=True)
 
