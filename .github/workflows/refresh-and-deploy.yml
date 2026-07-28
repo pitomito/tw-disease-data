@@ -47,6 +47,10 @@ jobs:
         run: python src/build_warehouse.py       # QA 未過即 exit≠0
 
       - name: Export static charts
+        env:
+          # Live interactive dashboard on Streamlit Community Cloud; the landing
+          # page turns this into the primary call to action.
+          STREAMLIT_URL: https://tw-disease-data-n8pqrc2ffvbq4s2eknkiu9.streamlit.app
         run: python scripts/export_static.py
 
       - name: Upload warehouse as artifact

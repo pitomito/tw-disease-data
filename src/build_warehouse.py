@@ -126,7 +126,12 @@ def main() -> int:
         ok = qa(con)
     finally:
         con.close()
-    print(f"\nWarehouse built -> {DB.relative_to(ROOT)}")
+    # DB may live outside the repo (temp dir) when the checkout is read-only.
+    try:
+        shown = DB.relative_to(ROOT)
+    except ValueError:
+        shown = DB
+    print(f"\nWarehouse built -> {shown}")
     return 0 if ok else 1          # non-zero on QA failure so CI catches regressions
 
 

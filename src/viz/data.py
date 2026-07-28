@@ -5,18 +5,68 @@ the Streamlit app and standalone HTML export. Connections are read-only.
 """
 from __future__ import annotations
 
+import sys
+import tempfile
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 
-DB_PATH = Path(__file__).resolve().parents[2] / "warehouse.duckdb"
+ROOT = Path(__file__).resolve().parents[2]
+DB_PATH = ROOT / "warehouse.duckdb"
 
 WEEKLY_DISEASES = ["FLU", "EV", "DENGUE"]   # served by v_weekly_trend
 
 
-def connect(db_path: Path | str = DB_PATH) -> duckdb.DuckDBPyConnection:
-    return duckdb.connect(str(db_path), read_only=True)
+def _writable_db_path() -> Path:
+    """Where the warehouse can be built on a fresh deployment.
+
+    Prefer the repo root; fall back to the system temp dir when the checkout is
+    read-only (some hosted runtimes mount it that way).
+    """
+    try:
+        probe = ROOT / ".write-probe"
+        probe.touch()
+        probe.unlink()
+        return DB_PATH
+    except OSError:
+        return Path(tempfile.gettempdir()) / "tw_disease_warehouse.duckdb"
+
+
+def ensure_warehouse(db_path: Path | str | None = None) -> Path:
+    """Return a path to an existing warehouse, building it first if needed.
+
+    The .duckdb file is a build artifact and deliberately not in git, so a fresh
+    deployment (e.g. Streamlit Community Cloud) starts without it. The snapshot
+    parquet *is* committed, so the warehouse can be rebuilt from it on first run.
+    """
+    if db_path is not None:
+        db_path = Path(db_path)
+        if db_path.exists():
+            return db_path
+    else:
+        if DB_PATH.exists():
+            return DB_PATH
+        db_path = _writable_db_path()
+        if db_path.exists():
+            return db_path
+
+    # Build from the committed snapshot. build_warehouse reads its target from a
+    # module-level global, so point that at our chosen (writable) location.
+    src_dir = str(ROOT / "src")
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
+    import build_warehouse
+
+    build_warehouse.DB = db_path
+    if build_warehouse.main() != 0:
+        raise RuntimeError("warehouse build failed QA — see stdout for details")
+    return db_path
+
+
+def connect(db_path: Path | str | None = None) -> duckdb.DuckDBPyConnection:
+    """Open the warehouse read-only, building it from the snapshot if absent."""
+    return duckdb.connect(str(ensure_warehouse(db_path)), read_only=True)
 
 
 def diseases(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:

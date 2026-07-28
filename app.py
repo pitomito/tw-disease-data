@@ -51,6 +51,11 @@ st.markdown(
 # --- cached resources / queries ------------------------------------------------
 @st.cache_resource
 def get_con():
+    # On a fresh deployment the .duckdb build artifact isn't in the repo, so the
+    # first run rebuilds it from the committed snapshot (~40s, then cached).
+    if not data.DB_PATH.exists():
+        with st.spinner("首次啟動:正在從資料快照建置倉儲(約 40 秒)…"):
+            return data.connect()
     return data.connect()
 
 
