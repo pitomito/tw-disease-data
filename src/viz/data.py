@@ -45,6 +45,35 @@ def weekly_trend(con, disease_code: str, county_name: str) -> pd.DataFrame:
     ).df()
 
 
+def weekly_kpis(con, disease_code: str, county_name: str) -> dict:
+    """Headline numbers for the dashboard's stat row.
+
+    `latest` is the most recent week that actually carries data for this
+    combination; peak is the all-time weekly maximum.
+    """
+    row = con.execute(
+        """
+        WITH t AS (
+            SELECT * FROM v_weekly_trend
+            WHERE disease_code = ? AND county_name = ?
+        ),
+        latest AS (SELECT * FROM t ORDER BY week_start_date DESC LIMIT 1),
+        peak   AS (SELECT * FROM t ORDER BY metric_value DESC, week_start_date LIMIT 1)
+        SELECT (SELECT metric_value    FROM latest) AS latest_value,
+               (SELECT week_start_date FROM latest) AS latest_week,
+               (SELECT wow_growth_pct  FROM latest) AS latest_wow,
+               (SELECT ma4             FROM latest) AS latest_ma4,
+               (SELECT metric_value    FROM peak)   AS peak_value,
+               (SELECT week_start_date FROM peak)   AS peak_week,
+               (SELECT sum(metric_value) FROM t)    AS total_value
+        """,
+        [disease_code, county_name],
+    ).fetchone()
+    keys = ["latest_value", "latest_week", "latest_wow", "latest_ma4",
+            "peak_value", "peak_week", "total_value"]
+    return dict(zip(keys, row))
+
+
 def weekly_weeks(con, disease_code: str) -> list:
     rows = con.execute(
         "SELECT DISTINCT week_start_date FROM v_weekly_dense "

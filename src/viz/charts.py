@@ -101,7 +101,10 @@ def dengue_heatmap(df: pd.DataFrame, year_label: str, max_points: int = 5000) ->
     total = len(df)
     if total > max_points:
         df = df.sample(max_points, random_state=0)
-    m = folium.Map(location=[23.7, 120.9], zoom_start=7, tiles="CartoDB positron",
+    # Basemap follows the active palette so the map matches the page around it.
+    dark = theme.SURFACE != "#fcfcfb"
+    m = folium.Map(location=[23.7, 120.9], zoom_start=7,
+                   tiles="CartoDB dark_matter" if dark else "CartoDB positron",
                    control_scale=True)
     if not df.empty:
         HeatMap(
